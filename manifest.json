@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "StealthTalk",
+  "version": "2.0",
+  "description": "AI-powered translator and typing emulator for Instagram",
+  "icons": {
+    "16": "assets/icon.png",
+    "48": "assets/icon.png",
+    "128": "assets/icon.png"
+  },
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "storage",
+    "clipboardRead"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Translator Settings"
+  },
+  "host_permissions": [
+    "https://openrouter.ai/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["config.js", "prompts.js", "content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/arrow.png", "assets/sun.png", "assets/moon.png", "assets/icon.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
