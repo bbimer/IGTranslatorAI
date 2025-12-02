@@ -4,7 +4,7 @@
 const CONFIG = {
   // Your OpenRouter API key
   // Get your key at: https://openrouter.ai/keys
-  API_KEY: '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',
+  API_KEY: 'your-api-key',
   
   // API endpoint (do not change unless you know what you're doing)
   API_URL: 'https://openrouter.ai/api/v1/chat/completions'
