@@ -456,6 +456,10 @@ async function fetchTranslation(text) {
   const apiKey = CONFIG.API_KEY;
   const url = CONFIG.API_URL;
   
+  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+    throw new Error('API Key not configured. Please add your OpenRouter API key in config.js');
+  }
+  
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -484,6 +488,16 @@ async function fetchTranslation(text) {
   if (!response.ok) {
     const errorText = await response.text();
     console.error('[Translator] Ошибка API:', errorText);
+    console.error('[Translator] Status:', response.status);
+    console.error('[Translator] Headers:', Object.fromEntries(response.headers.entries()));
+    
+    if (response.status === 401) {
+      const errorMsg = errorText.includes('User not found') 
+        ? 'OpenRouter API Key is invalid. Please:\n1. Go to https://openrouter.ai/keys\n2. Create a new API key\n3. Update config.js with your key\n4. Make sure you have credits'
+        : 'API Key invalid or expired. Please check your OpenRouter API key in config.js';
+      throw new Error(errorMsg);
+    }
+    
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
   
