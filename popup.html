@@ -16,84 +16,80 @@
     </div>
     
     <div class="settings-grid">
-      <div class="settings-column">
-        <div class="setting-group">
-          <label for="sourceLanguage">Source Language</label>
-          <select id="sourceLanguage">
-            <option value="auto">Auto-detect</option>
-            <option value="en">English</option>
-            <option value="ru">Russian</option>
-            <option value="uk">Ukrainian</option>
-            <option value="tr">Turkish</option>
-            <option value="es">Spanish</option>
-            <option value="fr">French</option>
-            <option value="de">German</option>
-            <option value="it">Italian</option>
-            <option value="pt">Portuguese</option>
-            <option value="zh">Chinese</option>
-            <option value="ja">Japanese</option>
-            <option value="ko">Korean</option>
-          </select>
-        </div>
-        
-        <div class="setting-group">
-          <label for="targetLanguage">Target Language</label>
-          <select id="targetLanguage">
-            <option value="ru">Russian</option>
-            <option value="en">English</option>
-            <option value="uk">Ukrainian</option>
-            <option value="tr">Turkish</option>
-            <option value="es">Spanish</option>
-            <option value="fr">French</option>
-            <option value="de">German</option>
-            <option value="it">Italian</option>
-            <option value="pt">Portuguese</option>
-            <option value="zh">Chinese</option>
-            <option value="ja">Japanese</option>
-            <option value="ko">Korean</option>
-          </select>
-        </div>
-        
-        <div class="setting-group">
-          <label for="typingSpeed">Typing Speed (WPM)</label>
-          <input type="number" id="typingSpeed" min="20" max="100" value="60" step="5">
-        </div>
+      <div class="setting-group">
+        <label for="sourceLanguage">Source Language</label>
+        <select id="sourceLanguage">
+          <option value="auto">Auto-detect</option>
+          <option value="en">English</option>
+          <option value="ru">Russian</option>
+          <option value="uk">Ukrainian</option>
+          <option value="sr">Serbian</option>
+          <option value="hr">Croatian</option>
+          <option value="tr">Turkish</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="it">Italian</option>
+          <option value="pt">Portuguese</option>
+          <option value="zh">Chinese</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+        </select>
       </div>
-      
-      <div class="settings-column">
-        <div class="setting-group">
-          <label for="translationModel">Translation Model (Alt+4)</label>
-          <select id="translationModel">
-            <option value="x-ai/grok-4.1-fast:free">Grok 4.1 Fast (Free)</option>
-            <option value="deepseek/deepseek-chat-v3.1">DeepSeek Chat v3.1 (Cheapest)</option>
-            <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
-            <option value="openai/gpt-5.1">GPT-5.1 (Human-like)</option>
-            <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (Quality)</option>
-          </select>
-        </div>
-        
-        <div class="setting-group">
-          <label for="typingModel">Typing Emulator Model (Alt+3)</label>
-          <select id="typingModel">
-            <option value="x-ai/grok-4.1-fast:free">Grok 4.1 Fast (Free)</option>
-            <option value="deepseek/deepseek-chat-v3.1">DeepSeek Chat v3.1 (Cheapest)</option>
-            <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
-            <option value="openai/gpt-5.1">GPT-5.1 (Human-like)</option>
-            <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (Quality)</option>
-          </select>
-        </div>
-        
-        <div class="setting-group">
-          <label for="promptStyle">Prompt Style (Alt+3)</label>
-          <select id="promptStyle">
-            <option value="none">No Style (direct)</option>
-            <option value="basic">No Style</option>
-            <option value="simple">Girl Lite</option>
-            <option value="advanced">Girl in Character (recommended)</option>
-            <option value="warm">Warm & Empathetic</option>
-            <option value="revealedTrader">Revealed Trader</option>
-          </select>
-        </div>
+      <div class="setting-group">
+        <label for="promptStyle">Prompt Style (Alt+3)</label>
+        <select id="promptStyle">
+          <option value="none">No Style (direct)</option>
+          <option value="literal">Literal (recommended)</option>
+          <option value="basic">Basic (no style)</option>
+          <option value="simple">Girl Lite</option>
+          <option value="advanced">Girl in Character</option>
+          <option value="warm">Warm & Empathetic</option>
+          <option value="revealedTrader">Revealed Trader</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <label for="targetLanguage">Target Language</label>
+        <select id="targetLanguage">
+          <option value="ru">Russian</option>
+          <option value="en">English</option>
+          <option value="uk">Ukrainian</option>
+          <option value="sr">Serbian</option>
+          <option value="hr">Croatian</option>
+          <option value="tr">Turkish</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="it">Italian</option>
+          <option value="pt">Portuguese</option>
+          <option value="zh">Chinese</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <label for="typingModel">Typing Emulator Model (Alt+3)</label>
+        <select id="typingModel">
+          <option value="x-ai/grok-4.1-fast:free">Grok 4.1 Fast (free)</option>
+          <option value="deepseek/deepseek-chat-v3.2">DeepSeek Chat v3.2 (cheapest)</option>
+          <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (recommended)</option>
+          <option value="openai/gpt-5.1">GPT-5.1 (human-like)</option>
+          <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (quality)</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <label for="typingSpeed">Typing Speed (WPM)</label>
+        <input type="number" id="typingSpeed" min="20" max="100" value="60" step="5">
+      </div>
+      <div class="setting-group">
+        <label for="translationModel">Translation Model (Alt+4)</label>
+        <select id="translationModel">
+          <option value="x-ai/grok-4.1-fast:free">Grok 4.1 Fast (free)</option>
+          <option value="deepseek/deepseek-chat-v3.2">DeepSeek Chat v3.2 (cheapest)</option>
+          <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (recommended)</option>
+          <option value="openai/gpt-5.1">GPT-5.1 (human-like)</option>
+          <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (quality)</option>
+        </select>
       </div>
     </div>
     
@@ -113,6 +109,20 @@
       <div class="slider-labels">
         <span>Fast (50ms)</span>
         <span>Slow (500ms)</span>
+      </div>
+    </div>
+    
+    <div class="setting-group-full crm-section">
+      <h2>CRM Integration</h2>
+      <div class="setting-row">
+        <label class="toggle-label">
+          <input type="checkbox" id="crmEnabled">
+          <span class="toggle-text">Enable CRM Logging</span>
+        </label>
+      </div>
+      <div class="setting-group crm-url-group">
+        <label for="crmApiUrl">CRM API URL</label>
+        <input type="text" id="crmApiUrl" placeholder="http://localhost:3000">
       </div>
     </div>
     
@@ -138,7 +148,7 @@
           <span class="shortcut-desc">Translate</span>
         </div>
         <div class="shortcut-item">
-          <span class="shortcut-key">Alt+F1</span>
+          <span class="shortcut-key">Alt+R</span>
           <span class="shortcut-desc">Reply + Auto</span>
         </div>
         <div class="shortcut-item">
@@ -146,7 +156,7 @@
           <span class="shortcut-desc">Reply + Clipboard</span>
         </div>
         <div class="shortcut-item">
-          <span class="shortcut-key">Alt+F3</span>
+          <span class="shortcut-key">Alt+Q</span>
           <span class="shortcut-desc">Reply + Type Emulator</span>
         </div>
         <div class="shortcut-item">
@@ -156,6 +166,10 @@
         <div class="shortcut-item">
           <span class="shortcut-key">S</span>
           <span class="shortcut-desc">Stop Typing (while typing)</span>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-key">Alt+H</span>
+          <span class="shortcut-desc">Show Help Overlay</span>
         </div>
       </div>
     </div>

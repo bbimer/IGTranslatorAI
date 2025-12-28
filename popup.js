@@ -3,14 +3,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const settings = await chrome.storage.sync.get({
     sourceLanguage: 'auto',
     targetLanguage: 'ru',
-    translationModel: 'x-ai/grok-4.1-fast:free',
-    typingModel: 'x-ai/grok-4.1-fast:free',
+    typingTargetLanguage: 'en',
+    translationModel: 'google/gemini-2.5-flash',
+    typingModel: 'google/gemini-2.5-flash',
     typingSpeed: 60,
-    promptStyle: 'simple',
+    promptStyle: 'literal',
     theme: 'dark',
-    punctuationDelay: 150
+    punctuationDelay: 150,
+    crmEnabled: false,
+    crmApiUrl: 'http://localhost:3000'
   });
-  
+
   document.getElementById('sourceLanguage').value = settings.sourceLanguage;
   document.getElementById('targetLanguage').value = settings.targetLanguage;
   document.getElementById('translationModel').value = settings.translationModel;
@@ -19,16 +22,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('promptStyle').value = settings.promptStyle;
   document.getElementById('punctuationDelay').value = settings.punctuationDelay;
   document.getElementById('punctuationDelayValue').textContent = settings.punctuationDelay;
-  
+
+  // CRM настройки
+  document.getElementById('crmEnabled').checked = settings.crmEnabled;
+  document.getElementById('crmApiUrl').value = settings.crmApiUrl;
+
+  // Показываем/скрываем URL поле в зависимости от состояния чекбокса
+  toggleCrmUrlVisibility(settings.crmEnabled);
+
+  document.getElementById('crmEnabled').addEventListener('change', (e) => {
+    toggleCrmUrlVisibility(e.target.checked);
+  });
+
   // Применяем тему
   applyTheme(settings.theme);
-  
+
   // Обработчик изменения ползунка
   const punctuationDelaySlider = document.getElementById('punctuationDelay');
   const punctuationDelayValue = document.getElementById('punctuationDelayValue');
-  
+
   punctuationDelaySlider.addEventListener('input', (e) => {
     punctuationDelayValue.textContent = e.target.value;
+  });
+
+  // Убираем фокус с select после выбора
+  document.querySelectorAll('select').forEach(select => {
+    select.addEventListener('change', () => {
+      select.blur();
+    });
   });
 });
 
@@ -63,6 +84,14 @@ document.getElementById('themeToggle').addEventListener('click', async () => {
   await chrome.storage.sync.set({ theme: newTheme });
 });
 
+// Показать/скрыть поле URL CRM
+function toggleCrmUrlVisibility(enabled) {
+  const urlGroup = document.querySelector('.crm-url-group');
+  if (urlGroup) {
+    urlGroup.style.display = enabled ? 'block' : 'none';
+  }
+}
+
 // Сохраняем настройки
 document.getElementById('saveButton').addEventListener('click', async () => {
   const currentTheme = document.body.getAttribute('data-theme') || 'dark';
@@ -74,17 +103,19 @@ document.getElementById('saveButton').addEventListener('click', async () => {
     typingSpeed: parseInt(document.getElementById('typingSpeed').value),
     promptStyle: document.getElementById('promptStyle').value,
     punctuationDelay: parseInt(document.getElementById('punctuationDelay').value),
-    theme: currentTheme
+    theme: currentTheme,
+    crmEnabled: document.getElementById('crmEnabled').checked,
+    crmApiUrl: document.getElementById('crmApiUrl').value || 'http://localhost:3000'
   };
-  
+
   await chrome.storage.sync.set(settings);
-  
+
   // Показываем сообщение об успехе
   const message = document.createElement('div');
   message.className = 'success-message';
   message.textContent = 'Settings saved!';
   document.body.appendChild(message);
-  
+
   setTimeout(() => {
     message.remove();
   }, 2000);

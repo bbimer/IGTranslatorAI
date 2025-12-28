@@ -24,9 +24,7 @@ body {
 }
 
 .settings-column {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: contents;
 }
 
 .header-container {
@@ -163,27 +161,36 @@ label {
 
 select {
   width: 100%;
-  padding: 11px 14px;
+  padding: 11px 40px 11px 14px;
   border: 1px solid rgba(100, 255, 218, 0.3);
   border-radius: 8px;
   font-size: 14px;
-  background: rgba(30, 30, 30, 0.8);
+  background-color: rgba(30, 30, 30, 0.8);
   color: #d4d4d4;
   cursor: pointer;
-  transition: all 0.2s ease, background 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+  transition: all 0.3s ease;
   font-weight: 400;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364ffda' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
 }
 
 select:hover {
   border-color: rgba(100, 255, 218, 0.5);
-  background: rgba(30, 30, 30, 0.95);
+  background-color: rgba(30, 30, 30, 0.95);
+  background-position: right 12px center;
 }
 
 select:focus {
   outline: none;
   border-color: #64ffda;
   box-shadow: 0 0 0 3px rgba(100, 255, 218, 0.1);
-  background: rgba(30, 30, 30, 1);
+  background-color: rgba(30, 30, 30, 1);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364ffda' stroke-width='2.5'%3E%3Cpath d='M6 15l6-6 6 6'/%3E%3C/svg%3E");
 }
 
 select option {
@@ -447,20 +454,23 @@ body[data-theme="light"] label {
 }
 
 body[data-theme="light"] select {
-  background: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.9);
   color: #2d2d2d;
   border: 1px solid rgba(0, 137, 123, 0.3);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2300897b' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-size: 16px 16px;
 }
 
 body[data-theme="light"] select:hover {
-  background: rgba(255, 255, 255, 1);
+  background-color: rgba(255, 255, 255, 1);
   border-color: rgba(0, 137, 123, 0.5);
 }
 
 body[data-theme="light"] select:focus {
   border-color: #00897b;
   box-shadow: 0 0 0 3px rgba(0, 137, 123, 0.1);
-  background: #ffffff;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2300897b' stroke-width='2.5'%3E%3Cpath d='M6 15l6-6 6 6'/%3E%3C/svg%3E");
 }
 
 body[data-theme="light"] select option {
@@ -593,4 +603,153 @@ body[data-theme="light"] .success-message {
   color: #00897b;
   border: 1px solid rgba(0, 137, 123, 0.5);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   CRM INTEGRATION SECTION
+   ============================================ */
+
+.crm-section {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.crm-section h2 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64ffda;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.setting-row {
+  margin-bottom: 12px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.toggle-label input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: rgba(30, 30, 30, 0.8);
+  border: 2px solid rgba(100, 255, 218, 0.4);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.toggle-label input[type="checkbox"]:hover {
+  border-color: rgba(100, 255, 218, 0.7);
+  background: rgba(40, 40, 40, 0.9);
+}
+
+.toggle-label input[type="checkbox"]:checked {
+  background: #64ffda;
+  border-color: #64ffda;
+}
+
+.toggle-label input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 4px;
+  height: 9px;
+  border: solid #1a1a1a;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.toggle-text {
+  font-size: 13px;
+  color: #e8e8e8;
+}
+
+.crm-url-group {
+  margin-top: 12px;
+}
+
+.crm-url-group input[type="text"] {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(30, 30, 30, 0.6);
+  border: 1px solid rgba(100, 255, 218, 0.2);
+  border-radius: 8px;
+  color: #e8e8e8;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.crm-url-group input[type="text"]:hover {
+  background: rgba(30, 30, 30, 0.8);
+  border-color: rgba(100, 255, 218, 0.4);
+}
+
+.crm-url-group input[type="text"]:focus {
+  outline: none;
+  border-color: #64ffda;
+  box-shadow: 0 0 0 3px rgba(100, 255, 218, 0.1);
+  background: rgba(30, 30, 30, 0.9);
+}
+
+.crm-url-group input[type="text"]::placeholder {
+  color: #666;
+}
+
+/* Light theme for CRM section */
+body[data-theme="light"] .crm-section h2 {
+  color: #00897b;
+}
+
+body[data-theme="light"] .toggle-text {
+  color: #2d2d2d;
+}
+
+body[data-theme="light"] .toggle-label input[type="checkbox"] {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 137, 123, 0.4);
+}
+
+body[data-theme="light"] .toggle-label input[type="checkbox"]:hover {
+  border-color: rgba(0, 137, 123, 0.7);
+  background: rgba(255, 255, 255, 1);
+}
+
+body[data-theme="light"] .toggle-label input[type="checkbox"]:checked {
+  background: #00897b;
+  border-color: #00897b;
+}
+
+body[data-theme="light"] .toggle-label input[type="checkbox"]:checked::after {
+  border-color: #ffffff;
+}
+
+body[data-theme="light"] .crm-url-group input[type="text"] {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 137, 123, 0.3);
+  color: #2d2d2d;
+}
+
+body[data-theme="light"] .crm-url-group input[type="text"]:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(0, 137, 123, 0.5);
+}
+
+body[data-theme="light"] .crm-url-group input[type="text"]:focus {
+  border-color: #00897b;
+  box-shadow: 0 0 0 3px rgba(0, 137, 123, 0.1);
+  background: #ffffff;
+}
+
+body[data-theme="light"] .crm-url-group input[type="text"]::placeholder {
+  color: #999;
 }

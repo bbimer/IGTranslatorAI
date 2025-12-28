@@ -15,18 +15,24 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'sync' && changes.theme) {
     const newTheme = changes.theme.newValue;
     console.log('[Translator] Тема изменена на:', newTheme);
-    
+
     // Обновляем тему в открытой консоли
     const overlay = document.getElementById('typing-emulator-overlay');
     if (overlay) {
       overlay.setAttribute('data-theme', newTheme);
-      
+
       // Обновляем иконку переключателя темы
       const themeIconBtn = overlay.querySelector('.theme-icon-btn');
       if (themeIconBtn) {
         const newIcon = newTheme === 'light' ? 'moon.png' : 'sun.png';
         themeIconBtn.src = chrome.runtime.getURL('assets/' + newIcon);
       }
+    }
+
+    // Обновляем тему в help-overlay
+    const helpOverlay = document.getElementById('help-overlay');
+    if (helpOverlay) {
+      helpOverlay.setAttribute('data-theme', newTheme);
     }
   }
 });
@@ -72,26 +78,33 @@ document.addEventListener('keydown', (event) => {
     console.log('[Translator] Нажата комбинация Alt+1');
     handleAutoReply();
   }
-  
-  // Alt+F1 для автоответа с Reply
-  if (event.altKey && event.key === 'F1') {
+
+  // Alt+R для автоответа с Reply
+  if (event.altKey && (event.key === 'r' || event.key === 'R' || event.key === 'к' || event.key === 'К')) {
     event.preventDefault();
-    console.log('[Translator] Нажата комбинация Alt+F1');
+    console.log('[Translator] Нажата комбинация Alt+R');
     handleAutoReplyWithReply();
   }
-  
+
   // Alt+F2 для печати из буфера с Reply
   if (event.altKey && event.key === 'F2') {
     event.preventDefault();
     console.log('[Translator] Нажата комбинация Alt+F2');
     handleClipboardTypingWithReply();
   }
-  
-  // Alt+F3 для перевода и печати с Reply
-  if (event.altKey && event.key === 'F3') {
+
+  // Alt+Q для перевода и печати с Reply
+  if (event.altKey && (event.key === 'q' || event.key === 'Q' || event.key === 'й' || event.key === 'Й')) {
     event.preventDefault();
-    console.log('[Translator] Нажата комбинация Alt+F3');
+    console.log('[Translator] Нажата комбинация Alt+Q');
     handleTranslateAndTypeWithReply();
+  }
+
+  // Alt+H для показа подсказок
+  if (event.altKey && (event.key === 'h' || event.key === 'H' || event.key === 'р' || event.key === 'Р')) {
+    event.preventDefault();
+    console.log('[Translator] Нажата комбинация Alt+H');
+    showHelpOverlay();
   }
   
   // Клавиша S для остановки печати
@@ -152,14 +165,23 @@ function extractMessagesFromSelection(range) {
   // Ищем элементы, которые могут быть сообщениями (только самые верхние уровни)
   const possibleSelectors = [
     'div[role="row"]',
-    'div[role="gridcell"]'
+    'div[role="gridcell"]',
+    'div[role="presentation"]',
+    'div.html-div[dir="auto"]'
   ];
   
-  const container = range.commonAncestorContainer.nodeType === 3 
+  let container = range.commonAncestorContainer.nodeType === 3 
     ? range.commonAncestorContainer.parentElement 
     : range.commonAncestorContainer;
   
   console.log('[Translator] Контейнер:', container);
+  
+  // Если контейнер слишком глубоко, ищем родительский gridcell или row
+  const messageParent = container.closest('div[role="gridcell"], div[role="row"]');
+  if (messageParent) {
+    console.log('[Translator] Найден родительский элемент сообщения:', messageParent.getAttribute('role'));
+    container = messageParent;
+  }
   
   // Пробуем найти сообщения по селекторам
   for (const selector of possibleSelectors) {
@@ -192,7 +214,7 @@ function extractMessagesFromSelection(range) {
         }
         
         const text = cleanMessageText(el);
-        if (text && text.length > 3) {
+        if (text && text.length >= 1) {
           console.log('[Translator] Добавлено сообщение:', text.substring(0, 50));
           messages.push({ element: el, text });
           addedElements.add(el);
@@ -295,46 +317,80 @@ function cleanMessageText(element) {
 
 // Проверяем, является ли сообщение исходящим (от пользователя)
 function isOutgoingMessage(element) {
-  // Проверяем наличие аватарки с alt (имя пользователя)
-  const avatar = element.querySelector('img[alt]');
-  if (avatar && avatar.alt && avatar.alt.trim().length > 0) {
-    // Есть аватарка с именем - это входящее сообщение
-    console.log('[Translator] Найдена аватарка:', avatar.alt, '- входящее сообщение');
+  const elementHtml = element.outerHTML || '';
+  const elementClasses = element.className || '';
+  
+  // Способ 1: Проверяем уникальные классы Instagram
+  // Исходящие имеют: x11jlvup, xpmdkuv, x12z03op, x9wyiwl
+  // Входящие имеют: x114wg8e, xrrpcnn, x14rx4xb
+  const outgoingClasses = ['x11jlvup', 'xpmdkuv', 'x12z03op', 'x9wyiwl', 'x12lizq0', 'x1nrdd72'];
+  const incomingClasses = ['x114wg8e', 'xrrpcnn', 'x14rx4xb', 'x19livfd', 'x1h2krnu'];
+  
+  // Проверяем в самом элементе и вложенных div
+  const allElements = [element, ...element.querySelectorAll('div')];
+  
+  for (const el of allElements) {
+    const classes = el.className || '';
+    
+    // Проверяем классы исходящих
+    for (const cls of outgoingClasses) {
+      if (classes.includes(cls)) {
+        console.log('[Translator] Исходящее по классу:', cls);
+        return true;
+      }
+    }
+    
+    // Проверяем классы входящих
+    for (const cls of incomingClasses) {
+      if (classes.includes(cls)) {
+        console.log('[Translator] Входящее по классу:', cls);
+        return false;
+      }
+    }
+  }
+  
+  // Способ 2: Проверяем aria-label - "Double tap to like" есть только на входящих
+  const likeButton = element.querySelector('[aria-label*="Double tap to like"], [aria-label*="like"], [aria-label*="Нравится"]');
+  if (likeButton) {
+    console.log('[Translator] Входящее - найдена кнопка лайка');
     return false;
   }
   
-  // Нет аватарки - это исходящее сообщение
-  console.log('[Translator] Аватарка не найдена - исходящее сообщение');
+  // Способ 3: Проверяем CSS стили по цвету фона
+  const allDivs = element.querySelectorAll('div');
+  for (const div of allDivs) {
+    const style = window.getComputedStyle(div);
+    const bg = style.backgroundColor;
+    if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+      const rgbMatch = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      if (rgbMatch) {
+        const [, r, g, b] = rgbMatch.map(Number);
+        
+        // Instagram синий #3797F0 = rgb(55, 151, 240) — ИСХОДЯЩЕЕ
+        if ((r >= 25 && r <= 85) && (g >= 120 && g <= 180) && (b >= 210 && b <= 255)) {
+          console.log('[Translator] Исходящее по синему фону:', bg);
+          return true;
+        }
+        
+        // Instagram серый #262626 = rgb(38, 38, 38) — ВХОДЯЩЕЕ
+        if ((r >= 20 && r <= 60) && (g >= 20 && g <= 60) && (b >= 20 && b <= 60) && Math.abs(r - g) < 10) {
+          console.log('[Translator] Входящее по серому фону:', bg);
+          return false;
+        }
+      }
+    }
+  }
   
+  // Способ 4: Проверяем текстовые маркеры
   const text = element.textContent.toLowerCase();
-  const classList = element.className.toLowerCase();
-  
-  // Дополнительно проверяем текст на наличие маркеров исходящих сообщений
-  const outgoingMarkers = [
-    'вы отправили',
-    'вы ответили', 
-    'ви надіслали',
-    'ви відповіли',
-    'you sent',
-    'you replied'
-  ];
-  
-  for (const marker of outgoingMarkers) {
-    if (text.includes(marker)) {
-      return true;
-    }
+  if (text.includes('вы отправили') || text.includes('you sent') || text.includes('delivered')) {
+    console.log('[Translator] Исходящее по маркеру');
+    return true;
   }
   
-  // Проверяем классы
-  const outgoingClasses = ['outgoing', 'sent', 'own', 'self', 'me'];
-  for (const cls of outgoingClasses) {
-    if (classList.includes(cls)) {
-      return true;
-    }
-  }
-  
-  // Если не нашли аватарку и нет других маркеров - считаем исходящим
-  return !avatar;
+  // По умолчанию считаем входящим
+  console.log('[Translator] По умолчанию - входящее сообщение');
+  return false;
 }
 
 // Перевод одного текста (когда не нашли отдельные сообщения)
@@ -376,60 +432,138 @@ async function translateSingleText(text, range) {
 // Перевод и показ прямо под сообщением
 async function translateAndShowInline(element, text) {
   console.log('[Translator] translateAndShowInline для:', text.substring(0, 50));
-  
-  // Удаляем все существующие переводы в этом элементе
+
+  // Удаляем все существующие переводы рядом с этим элементом
   const existingTranslations = element.querySelectorAll('.inline-translation');
   if (existingTranslations.length > 0) {
-    console.log('[Translator] Удаляем', existingTranslations.length, 'существующих переводов');
+    console.log('[Translator] Удаляем', existingTranslations.length, 'существующих переводов внутри');
     existingTranslations.forEach(t => t.remove());
   }
-  
+
+  // Также удаляем перевод, который идёт сразу после элемента
+  if (element.nextElementSibling && element.nextElementSibling.classList.contains('inline-translation')) {
+    element.nextElementSibling.remove();
+  }
+
   // Проверяем, исходящее ли это сообщение
   const isOutgoing = isOutgoingMessage(element);
   console.log('[Translator] Исходящее сообщение:', isOutgoing);
-  
+
+  // Получаем настройки языков
+  const settings = await chrome.storage.sync.get({
+    targetLanguage: 'ru'
+  });
+
+  const langCodes = {
+    'en': 'EN',
+    'ru': 'RU',
+    'uk': 'UK',
+    'sr': 'SR',
+    'hr': 'HR',
+    'tr': 'TR',
+    'es': 'ES',
+    'fr': 'FR',
+    'de': 'DE',
+    'it': 'IT',
+    'pt': 'PT',
+    'zh': 'ZH',
+    'ja': 'JA',
+    'ko': 'KO'
+  };
+
+  const targetLang = langCodes[settings.targetLanguage] || 'RU';
+
   // Создаем элемент для перевода
   const translationDiv = document.createElement('div');
   translationDiv.className = isOutgoing ? 'inline-translation outgoing' : 'inline-translation';
   translationDiv.innerHTML = '<div class="translation-loading">Перевод...</div>';
-  
-  // Вставляем после элемента
-  element.style.position = 'relative';
-  element.appendChild(translationDiv);
+
+  // Вставляем ПОСЛЕ элемента, а не внутрь (чтобы избежать проблем с flex-контейнерами)
+  element.insertAdjacentElement('afterend', translationDiv);
   console.log('[Translator] Показан индикатор загрузки');
-  
+
   try {
-    const translatedText = await fetchTranslation(text);
-    console.log('[Translator] Получен перевод:', translatedText.substring(0, 50));
-    
+    // Используем новую функцию с определением языка
+    const result = await fetchTranslationWithLang(text);
+    console.log('[Translator] Получен перевод:', result.translation.substring(0, 50), 'Язык:', result.detectedLang);
+
     translationDiv.innerHTML = `
       <div class="translation-content">
         <button class="translation-close" title="Закрыть">×</button>
-        <div class="translation-text">${escapeHtml(translatedText)}</div>
+        <span class="translation-lang">${result.detectedLang}/${targetLang}</span>
+        <div class="translation-text">${escapeHtml(result.translation)}</div>
       </div>
     `;
-    
+
     translationDiv.querySelector('.translation-close').addEventListener('click', (e) => {
       e.stopPropagation();
       translationDiv.remove();
     });
+
+    // Отправляем в CRM (асинхронно, не блокируем UI)
+    logMessageToCRM(text, result.translation, isOutgoing);
+
   } catch (error) {
     console.error('[Translator] Ошибка перевода:', error);
     translationDiv.innerHTML = `<div class="translation-error">Ошибка: ${escapeHtml(error.message)}</div>`;
   }
 }
 
-// Запрос перевода через OpenRouter API
-async function fetchTranslation(text) {
-  console.log('[Translator] Запрос перевода для:', text.substring(0, 50));
+// Отправка сообщения в CRM
+async function logMessageToCRM(originalText, translatedText, isOutgoing) {
+  console.log('[CRM] logMessageToCRM вызван:', { originalText: originalText?.substring(0, 30), isOutgoing });
   
+  try {
+    // Проверяем включена ли интеграция с CRM
+    const settings = await chrome.storage.sync.get({ crmEnabled: false });
+    console.log('[CRM] Настройки:', settings);
+    
+    if (!settings.crmEnabled) {
+      console.log('[CRM] Интеграция отключена в настройках');
+      return;
+    }
+    
+    // Извлекаем профиль собеседника
+    const profile = window.CRM_API?.extractCurrentProfile();
+    if (!profile) {
+      console.log('[CRM] Не удалось извлечь профиль, пропускаем логирование');
+      return;
+    }
+    
+    console.log('[CRM] Логируем сообщение для:', profile.username);
+    
+    const result = await window.CRM_API.logConversation({
+      username: profile.username,
+      profileUrl: profile.profileUrl,
+      platform: profile.platform,
+      originalText,
+      translatedText,
+      translationStyle: 'warm_chat', // TODO: брать из настроек
+      isOutgoing
+    });
+    
+    if (result.isNewLead) {
+      console.log('[CRM] Создан новый лид:', result.leadId);
+    }
+    if (result.triggers?.length > 0) {
+      console.log('[CRM] Обнаружены триггеры:', result.triggers);
+    }
+  } catch (error) {
+    console.error('[CRM] Ошибка логирования:', error);
+  }
+}
+
+// Запрос перевода через OpenRouter API с определением языка
+async function fetchTranslationWithLang(text) {
+  console.log('[Translator] Запрос перевода для:', text.substring(0, 50));
+
   // Получаем настройки
   const settings = await chrome.storage.sync.get({
     sourceLanguage: 'auto',
     targetLanguage: 'ru',
-    translationModel: 'x-ai/grok-4.1-fast:free'
+    translationModel: 'google/gemini-2.0-flash-exp:free'
   });
-  
+
   const languageNames = {
     'auto': 'auto-detect',
     'en': 'English',
@@ -443,23 +577,30 @@ async function fetchTranslation(text) {
     'pt': 'Portuguese',
     'zh': 'Chinese',
     'ja': 'Japanese',
-    'ko': 'Korean'
+    'ko': 'Korean',
+    'sr': 'Serbian',
+    'hr': 'Croatian'
   };
-  
+
   const targetLang = languageNames[settings.targetLanguage] || 'Russian';
-  const sourceLang = settings.sourceLanguage === 'auto' 
-    ? 'Detect the source language automatically and translate' 
-    : `Translate from ${languageNames[settings.sourceLanguage]}`;
-  
+
   console.log('[Translator] Перевод на:', targetLang);
-  
+
   const apiKey = CONFIG.API_KEY;
   const url = CONFIG.API_URL;
-  
-  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+
+  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE' || apiKey === 'YOUR_OPENROUTER_API_KEY_HERE') {
     throw new Error('API Key not configured. Please add your OpenRouter API key in config.js');
   }
-  
+
+  // Промпт с определением языка
+  const systemPrompt = settings.sourceLanguage === 'auto'
+    ? `You are a translator. Detect the source language and translate to ${targetLang}. 
+Reply in format: [LANG_CODE] translated text
+Where LANG_CODE is: EN, RU, UK, SR, HR, TR, ES, FR, DE, IT, PT, ZH, JA, KO
+Example: [EN] Привет, как дела?`
+    : `Translate from ${languageNames[settings.sourceLanguage]} to ${targetLang}. Reply ONLY with the translation.`;
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -473,7 +614,7 @@ async function fetchTranslation(text) {
       messages: [
         {
           role: 'system',
-          content: PROMPTS.translation.simple(sourceLang, targetLang)
+          content: systemPrompt
         },
         {
           role: 'user',
@@ -484,31 +625,50 @@ async function fetchTranslation(text) {
       max_tokens: 1000
     })
   });
-  
+
   if (!response.ok) {
     const errorText = await response.text();
     console.error('[Translator] Ошибка API:', errorText);
-    console.error('[Translator] Status:', response.status);
-    console.error('[Translator] Headers:', Object.fromEntries(response.headers.entries()));
-    
+
     if (response.status === 401) {
-      const errorMsg = errorText.includes('User not found') 
-        ? 'OpenRouter API Key is invalid. Please:\n1. Go to https://openrouter.ai/keys\n2. Create a new API key\n3. Update config.js with your key\n4. Make sure you have credits'
-        : 'API Key invalid or expired. Please check your OpenRouter API key in config.js';
-      throw new Error(errorMsg);
+      throw new Error('API Key invalid or expired');
     }
-    
+
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
-  
+
   const data = await response.json();
   console.log('[Translator] Ответ API:', data);
-  
+
   if (data.choices && data.choices[0] && data.choices[0].message) {
-    return data.choices[0].message.content.trim();
+    const content = data.choices[0].message.content.trim();
+
+    // Парсим ответ с определением языка
+    if (settings.sourceLanguage === 'auto') {
+      const match = content.match(/^\[([A-Z]{2})\]\s*(.+)$/s);
+      if (match) {
+        return {
+          detectedLang: match[1],
+          translation: match[2].trim()
+        };
+      }
+    }
+
+    // Если язык указан в настройках или не удалось распарсить
+    const langCode = settings.sourceLanguage.toUpperCase();
+    return {
+      detectedLang: langCode === 'AUTO' ? '??' : langCode,
+      translation: content
+    };
   }
-  
+
   throw new Error('Failed to get translation');
+}
+
+// Запрос перевода через OpenRouter API (старая версия для совместимости)
+async function fetchTranslation(text) {
+  const result = await fetchTranslationWithLang(text);
+  return result.translation;
 }
 
 // Показываем popup с переводом (для случая когда не нашли отдельные сообщения)
@@ -623,6 +783,60 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// Показываем оверлей с подсказками по горячим клавишам
+async function showHelpOverlay() {
+  // Удаляем существующий оверлей если есть
+  const existing = document.getElementById('help-overlay');
+  if (existing) {
+    existing.remove();
+    return;
+  }
+
+  // Получаем тему из настроек
+  const settings = await chrome.storage.sync.get({ theme: 'dark' });
+  const theme = settings.theme;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'help-overlay';
+  overlay.className = 'help-overlay';
+  overlay.setAttribute('data-theme', theme);
+
+  overlay.innerHTML = `
+    <div class="help-container">
+      <h2>KEYBOARD SHORTCUTS</h2>
+      <div class="help-grid">
+        <div class="help-item"><kbd>Alt+1</kbd><span>Auto Reply (select text)</span></div>
+        <div class="help-item"><kbd>Alt+2</kbd><span>Type from Clipboard</span></div>
+        <div class="help-item"><kbd>Alt+3</kbd><span>Type Emulator</span></div>
+        <div class="help-item"><kbd>Alt+4</kbd><span>Translate</span></div>
+        <div class="help-item"><kbd>Alt+R</kbd><span>Reply + Auto</span></div>
+        <div class="help-item"><kbd>Alt+F2</kbd><span>Reply + Clipboard</span></div>
+        <div class="help-item"><kbd>Alt+Q</kbd><span>Reply + Type Emulator</span></div>
+        <div class="help-item"><kbd>Right-click</kbd><span>Context Menu → Translate</span></div>
+        <div class="help-item help-item-full"><kbd>S</kbd><span>Stop Typing (while typing)</span></div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Закрытие по клику вне контейнера
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+    }
+  });
+
+  // Закрытие по Esc или повторному Alt+H
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      overlay.remove();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+}
+
 // Показываем оверлей для эмуляции печати
 async function showTypingEmulatorOverlay() {
   // Удаляем существующий оверлей если есть
@@ -631,26 +845,29 @@ async function showTypingEmulatorOverlay() {
     existing.remove();
     return;
   }
-  
-  // Получаем тему из настроек
-  const settings = await chrome.storage.sync.get({ theme: 'dark' });
+
+  // Получаем настройки
+  const settings = await chrome.storage.sync.get({
+    theme: 'dark',
+    typingTargetLanguage: 'en'
+  });
   const theme = settings.theme;
-  
+
   const overlay = document.createElement('div');
   overlay.id = 'typing-emulator-overlay';
   overlay.className = 'typing-emulator-overlay';
   overlay.setAttribute('data-theme', theme);
-  
+
   // Загружаем историю переводов
   const historyData = await chrome.storage.local.get({ translationHistory: [] });
   const history = historyData.translationHistory.slice(0, 10);
-  
+
   console.log('[History] Загружено элементов истории:', history.length);
   console.log('[History] История:', history);
-  
+
   // Сохраняем в window для доступа из обработчиков
   window._translationHistory = history;
-  
+
   const historyHTML = history.length > 0 ? history.map((item, index) => `
     <div class="history-item" data-index="${index}">
       <div class="history-original">${escapeHtml(item.original)}</div>
@@ -660,9 +877,26 @@ async function showTypingEmulatorOverlay() {
       <div class="history-translated">${escapeHtml(item.translated)}</div>
     </div>
   `).join('') : '<div class="history-empty">No translation history yet</div>';
-  
+
   const themeIcon = theme === 'light' ? 'moon.png' : 'sun.png';
-  
+
+  // Опции языков для селектора
+  const languages = [
+    { code: 'en', name: 'EN' },
+    { code: 'sr', name: 'SR' },
+    { code: 'hr', name: 'HR' },
+    { code: 'ru', name: 'RU' },
+    { code: 'uk', name: 'UK' },
+    { code: 'tr', name: 'TR' },
+    { code: 'es', name: 'ES' },
+    { code: 'fr', name: 'FR' },
+    { code: 'de', name: 'DE' }
+  ];
+
+  const languageOptions = languages.map(lang =>
+    `<option value="${lang.code}" ${lang.code === settings.typingTargetLanguage ? 'selected' : ''}>${lang.name}</option>`
+  ).join('');
+
   overlay.innerHTML = `
     <div class="typing-emulator-container">
       <div class="input-wrapper">
@@ -671,6 +905,9 @@ async function showTypingEmulatorOverlay() {
           placeholder="Type message..."
           rows="1"
         ></textarea>
+        <select id="target-lang-select" class="target-lang-select" title="Target language">
+          ${languageOptions}
+        </select>
         <button id="theme-toggle" class="theme-toggle-btn" title="Toggle theme">
           <img src="${chrome.runtime.getURL('assets/' + themeIcon)}" alt="Theme" class="theme-icon-btn" />
         </button>
@@ -685,34 +922,41 @@ async function showTypingEmulatorOverlay() {
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(overlay);
-  
+
+  // Обработчик селектора языка - сохраняем выбор
+  const targetLangSelect = document.getElementById('target-lang-select');
+  targetLangSelect.addEventListener('change', async (e) => {
+    await chrome.storage.sync.set({ typingTargetLanguage: e.target.value });
+    console.log('[Typing Emulator] Target language changed to:', e.target.value);
+  });
+
   // Обработчик кнопки переключения темы
   const themeToggleBtn = document.getElementById('theme-toggle');
   const themeIconBtn = themeToggleBtn.querySelector('.theme-icon-btn');
-  
+
   themeToggleBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
     const currentTheme = overlay.getAttribute('data-theme') || 'dark';
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
+
     // Обновляем тему оверлея
     overlay.setAttribute('data-theme', newTheme);
-    
+
     // Меняем иконку
     const newIcon = newTheme === 'light' ? 'moon.png' : 'sun.png';
     themeIconBtn.src = chrome.runtime.getURL('assets/' + newIcon);
-    
+
     // Сохраняем в настройки
     await chrome.storage.sync.set({ theme: newTheme });
   });
-  
+
   // Получаем элементы
   const typingInput = document.getElementById('typing-input');
   const historyToggle = document.getElementById('history-toggle');
   const historyPanel = overlay.querySelector('.translation-history');
-  
+
   // Обработчик кнопки истории
   historyToggle.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -744,30 +988,33 @@ async function showTypingEmulatorOverlay() {
   // Автоматическое изменение высоты textarea
   const minHeight = 36;
   const maxHeight = 150;
-  
+
   function autoResize() {
     // Сбрасываем высоту для точного расчета
     typingInput.style.height = minHeight + 'px';
     typingInput.style.overflowY = 'hidden';
-    
+
     // Получаем реальную высоту контента
     const scrollHeight = typingInput.scrollHeight;
-    
+
     // Расширяем только если scrollHeight значительно больше минимума
     // Порог 54px = minHeight (36) + примерно одна строка (18)
     if (scrollHeight > 54) {
       const newHeight = Math.min(scrollHeight, maxHeight);
       typingInput.style.height = newHeight + 'px';
-      
+
       // Включаем прокрутку если достигли максимума
       if (scrollHeight >= maxHeight) {
         typingInput.style.overflowY = 'auto';
       }
     }
   }
-  
+
   typingInput.addEventListener('input', autoResize);
-  
+
+  // Устанавливаем начальную высоту сразу
+  typingInput.style.height = minHeight + 'px';
+
   // Фокус на input
   setTimeout(() => {
     typingInput.focus();
@@ -806,7 +1053,7 @@ async function showGrammarCorrection(originalText, mainOverlay, inputField) {
   try {
     // Получаем настройки
     const settings = await chrome.storage.sync.get({
-      typingModel: 'x-ai/grok-4.1-fast:free'
+      typingModel: 'google/gemini-2.5-flash'
     });
     
     // Показываем индикатор загрузки
@@ -1014,7 +1261,7 @@ async function showTranslationPreview(originalText, mainOverlay) {
   try {
     // Получаем настройки для отображения модели
     const settings = await chrome.storage.sync.get({
-      typingModel: 'x-ai/grok-4.1-fast:free',
+      typingModel: 'google/gemini-2.5-flash',
       typingSpeed: 60
     });
     
@@ -1225,31 +1472,45 @@ async function translateAndType(text, wpm) {
   }
 }
 
-// Перевод с русского на английский в стиле Instagram девушки
+// Перевод для Typing Emulator с учётом настроек языков
 async function translateRuToEn(text) {
-  // Получаем модель из настроек
+  // Получаем настройки включая языки для typing
   const settings = await chrome.storage.sync.get({
-    typingModel: 'x-ai/grok-4.1-fast:free',
-    promptStyle: 'simple'
+    typingModel: 'google/gemini-2.5-flash',
+    promptStyle: 'literal',
+    typingSourceLanguage: 'ru',
+    typingTargetLanguage: 'en'
   });
-  
+
+  const languageNames = {
+    'en': 'English',
+    'ru': 'Russian',
+    'uk': 'Ukrainian',
+    'sr': 'Serbian',
+    'hr': 'Croatian',
+    'tr': 'Turkish',
+    'es': 'Spanish',
+    'fr': 'French',
+    'de': 'German',
+    'it': 'Italian',
+    'pt': 'Portuguese',
+    'zh': 'Chinese',
+    'ja': 'Japanese',
+    'ko': 'Korean'
+  };
+
+  const sourceLang = languageNames[settings.typingSourceLanguage] || 'Russian';
+  const targetLang = languageNames[settings.typingTargetLanguage] || 'English';
+
+  console.log(`[Typing Emulator] Перевод: ${sourceLang} → ${targetLang}`);
+
   const apiKey = CONFIG.API_KEY;
   const url = CONFIG.API_URL;
-  
-  // Выбираем промпт в зависимости от настроек
+
+  // Выбираем промпт в зависимости от настроек (теперь с языками)
   let systemPrompt;
-  switch (settings.promptStyle) {
-    case 'basic':
-      systemPrompt = PROMPTS.translationTyping.basic;
-      break;
-    case 'advanced':
-      systemPrompt = PROMPTS.translationTyping.advanced;
-      break;
-    case 'simple':
-    default:
-      systemPrompt = PROMPTS.translationTyping.simple;
-      break;
-  }
+  const promptFunc = PROMPTS.translationTyping[settings.promptStyle] || PROMPTS.translationTyping.simple;
+  systemPrompt = promptFunc(sourceLang, targetLang);
   
   const response = await fetch(url, {
     method: 'POST',
@@ -1576,7 +1837,7 @@ async function handleAutoReply() {
 // Генерируем автоответ через AI
 async function generateAutoReply(messageText) {
   const settings = await chrome.storage.sync.get({
-    typingModel: 'x-ai/grok-4.1-fast:free'
+    typingModel: 'google/gemini-2.5-flash'
   });
   
   const apiKey = CONFIG.API_KEY;
@@ -1688,18 +1949,105 @@ async function handleClipboardTyping() {
   }
 }
 
+// Находим последнее входящее сообщение и наводим на него для появления кнопки Reply
+async function hoverLastIncomingMessage() {
+  console.log('[Reply] Ищем последнее входящее сообщение для hover...');
+
+  // Ищем все сообщения
+  const messageSelectors = [
+    'div[role="row"]',
+    'div[role="listitem"]',
+    'div[role="gridcell"]'
+  ];
+
+  let allMessages = [];
+  for (const selector of messageSelectors) {
+    const messages = document.querySelectorAll(selector);
+    if (messages.length > 0) {
+      allMessages = Array.from(messages);
+      break;
+    }
+  }
+
+  if (allMessages.length === 0) {
+    console.log('[Reply] Сообщения не найдены');
+    return false;
+  }
+
+  // Ищем последнее входящее сообщение (не исходящее)
+  for (let i = allMessages.length - 1; i >= 0; i--) {
+    const msg = allMessages[i];
+
+    // Проверяем что это не исходящее сообщение
+    const isOutgoing = msg.querySelector('[data-scope="outgoing"]') ||
+                       msg.classList.contains('outgoing') ||
+                       msg.querySelector('div[style*="flex-end"]');
+
+    if (!isOutgoing) {
+      console.log('[Reply] Найдено входящее сообщение, наводим курсор');
+
+      // Создаем и отправляем событие mouseenter/mouseover
+      const mouseEnterEvent = new MouseEvent('mouseenter', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      });
+      const mouseOverEvent = new MouseEvent('mouseover', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      });
+
+      msg.dispatchEvent(mouseEnterEvent);
+      msg.dispatchEvent(mouseOverEvent);
+
+      // Ждем появления кнопки Reply
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      return true;
+    }
+  }
+
+  // Если не нашли входящее, наводим на последнее сообщение
+  const lastMsg = allMessages[allMessages.length - 1];
+  const mouseEnterEvent = new MouseEvent('mouseenter', {
+    bubbles: true,
+    cancelable: true,
+    view: window
+  });
+  lastMsg.dispatchEvent(mouseEnterEvent);
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  return true;
+}
+
+// Находим и нажимаем кнопку Reply с предварительным hover
+async function clickReplyButtonWithHover() {
+  // Сначала пробуем найти кнопку Reply напрямую
+  if (clickReplyButton()) {
+    return true;
+  }
+
+  // Если не нашли, наводим на последнее сообщение
+  console.log('[Reply] Кнопка не найдена, пробуем hover на сообщение...');
+  await hoverLastIncomingMessage();
+
+  // Пробуем снова найти кнопку
+  return clickReplyButton();
+}
+
 // Находим и нажимаем кнопку Reply
 function clickReplyButton() {
   console.log('[Reply] Ищем кнопку Reply...');
-  
-  // Ищем SVG с aria-label="Reply to message from..."
+
+  // Способ 1: Ищем SVG с aria-label="Reply" или "Reply to message"
   const svgs = document.querySelectorAll('svg[aria-label]');
   for (const svg of svgs) {
     const ariaLabel = svg.getAttribute('aria-label') || '';
-    
-    if (ariaLabel.toLowerCase().includes('reply to message')) {
+
+    if (ariaLabel.toLowerCase().includes('reply')) {
       console.log('[Reply] Найден SVG с aria-label:', ariaLabel);
-      
+
       // Ищем родительский div с role="button"
       let parent = svg.parentElement;
       while (parent && parent !== document.body) {
@@ -1765,11 +2113,11 @@ function clickReplyButton() {
   // Ищем по тексту внутри title
   const titles = document.querySelectorAll('title');
   for (const title of titles) {
-    if (title.textContent?.toLowerCase().includes('reply to message')) {
+    if (title.textContent?.toLowerCase().includes('reply')) {
       console.log('[Reply] Найден title с Reply');
       let parent = title.parentElement;
       while (parent && parent !== document.body) {
-        if (parent.getAttribute('role') === 'button' || 
+        if (parent.getAttribute('role') === 'button' ||
             window.getComputedStyle(parent).cursor === 'pointer') {
           console.log('[Reply] Кликаем родителя title');
           parent.click();
@@ -1779,12 +2127,61 @@ function clickReplyButton() {
       }
     }
   }
-  
+
+  // Способ 6: Ищем по data-testid
+  const testIdButtons = document.querySelectorAll('[data-testid*="reply"], [data-testid*="Reply"]');
+  for (const btn of testIdButtons) {
+    console.log('[Reply] Найдена кнопка по data-testid');
+    btn.click();
+    return true;
+  }
+
+  // Способ 7: Ищем иконку reply (стрелка назад) в последнем сообщении
+  const messages = document.querySelectorAll('div[role="row"], div[role="listitem"]');
+  if (messages.length > 0) {
+    const lastMessage = messages[messages.length - 1];
+    const replyIcon = lastMessage.querySelector('svg[aria-label*="eply"], svg[aria-label*="ответ"]');
+    if (replyIcon) {
+      let parent = replyIcon.parentElement;
+      while (parent && parent !== lastMessage) {
+        if (parent.getAttribute('role') === 'button' ||
+            window.getComputedStyle(parent).cursor === 'pointer') {
+          console.log('[Reply] Найдена кнопка Reply в последнем сообщении');
+          parent.click();
+          return true;
+        }
+        parent = parent.parentElement;
+      }
+    }
+  }
+
+  // Способ 8: Ищем любую кнопку с иконкой стрелки (reply icon path)
+  const allSvgs = document.querySelectorAll('svg');
+  for (const svg of allSvgs) {
+    const paths = svg.querySelectorAll('path');
+    for (const path of paths) {
+      const d = path.getAttribute('d') || '';
+      // Типичный path для иконки reply (стрелка влево-вверх)
+      if (d.includes('M10') && d.includes('l-') && (d.includes('7') || d.includes('8'))) {
+        let parent = svg.parentElement;
+        while (parent && parent !== document.body) {
+          if (parent.getAttribute('role') === 'button' ||
+              window.getComputedStyle(parent).cursor === 'pointer') {
+            console.log('[Reply] Найдена кнопка Reply по path иконки');
+            parent.click();
+            return true;
+          }
+          parent = parent.parentElement;
+        }
+      }
+    }
+  }
+
   console.error('[Reply] Кнопка Reply не найдена');
   return false;
 }
 
-// Alt+F1: Автоответ с Reply
+// Alt+R: Автоответ с Reply
 async function handleAutoReplyWithReply() {
   if (isCurrentlyTyping) {
     console.log('[Auto Reply with Reply] Typing cancelled');
@@ -1904,96 +2301,519 @@ async function handleClipboardTypingWithReply() {
   }
 }
 
-// Alt+F3: Открыть консоль для ввода и ответить через Reply
-function handleTranslateAndTypeWithReply() {
+// Alt+Q: Открыть консоль для ввода и ответить через Reply
+async function handleTranslateAndTypeWithReply() {
   // Удаляем существующий оверлей если есть
   const existing = document.getElementById('typing-emulator-overlay');
   if (existing) {
     existing.remove();
     return;
   }
-  
+
+  // Получаем настройки
+  const settings = await chrome.storage.sync.get({
+    theme: 'dark',
+    typingTargetLanguage: 'en'
+  });
+  const theme = settings.theme;
+
   const overlay = document.createElement('div');
   overlay.id = 'typing-emulator-overlay';
   overlay.className = 'typing-emulator-overlay';
+  overlay.setAttribute('data-theme', theme);
+  // Помечаем что это режим Reply
+  overlay.setAttribute('data-reply-mode', 'true');
+
+  // Загружаем историю переводов
+  const historyData = await chrome.storage.local.get({ translationHistory: [] });
+  const history = historyData.translationHistory.slice(0, 10);
+
+  window._translationHistory = history;
+
+  const historyHTML = history.length > 0 ? history.map((item, index) => `
+    <div class="history-item" data-index="${index}">
+      <div class="history-original">${escapeHtml(item.original)}</div>
+      <div class="history-arrow">
+        <img src="${chrome.runtime.getURL('assets/arrow.png')}" alt="→" class="arrow-icon" />
+      </div>
+      <div class="history-translated">${escapeHtml(item.translated)}</div>
+    </div>
+  `).join('') : '<div class="history-empty">No translation history yet</div>';
+
+  const themeIcon = theme === 'light' ? 'moon.png' : 'sun.png';
+
+  // Опции языков для селектора
+  const languages = [
+    { code: 'en', name: 'EN' },
+    { code: 'sr', name: 'SR' },
+    { code: 'hr', name: 'HR' },
+    { code: 'ru', name: 'RU' },
+    { code: 'uk', name: 'UK' },
+    { code: 'tr', name: 'TR' },
+    { code: 'es', name: 'ES' },
+    { code: 'fr', name: 'FR' },
+    { code: 'de', name: 'DE' }
+  ];
+
+  const languageOptions = languages.map(lang =>
+    `<option value="${lang.code}" ${lang.code === settings.typingTargetLanguage ? 'selected' : ''}>${lang.name}</option>`
+  ).join('');
+
   overlay.innerHTML = `
     <div class="typing-emulator-container">
-      <input 
-        type="text"
-        id="typing-input" 
-        placeholder="Type message for reply..."
-      />
+      <div class="input-wrapper">
+        <textarea 
+          id="typing-input" 
+          placeholder="Type message for Reply..."
+          rows="1"
+        ></textarea>
+        <select id="target-lang-select" class="target-lang-select" title="Target language">
+          ${languageOptions}
+        </select>
+        <button id="theme-toggle" class="theme-toggle-btn" title="Toggle theme">
+          <img src="${chrome.runtime.getURL('assets/' + themeIcon)}" alt="Theme" class="theme-icon-btn" />
+        </button>
+        <button id="history-toggle" class="history-toggle" title="Toggle history">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="translation-history" style="display: none;">
+        ${historyHTML}
+      </div>
     </div>
   `;
-  
+
   document.body.appendChild(overlay);
-  
+
+  // Обработчик селектора языка - сохраняем выбор
+  const targetLangSelect = document.getElementById('target-lang-select');
+  targetLangSelect.addEventListener('change', async (e) => {
+    await chrome.storage.sync.set({ typingTargetLanguage: e.target.value });
+    console.log('[Typing Emulator] Target language changed to:', e.target.value);
+  });
+
+  // Обработчик кнопки переключения темы
+  const themeToggleBtn = document.getElementById('theme-toggle');
+  const themeIconBtn = themeToggleBtn.querySelector('.theme-icon-btn');
+
+  themeToggleBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const currentTheme = overlay.getAttribute('data-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    overlay.setAttribute('data-theme', newTheme);
+
+    const newIcon = newTheme === 'light' ? 'moon.png' : 'sun.png';
+    themeIconBtn.src = chrome.runtime.getURL('assets/' + newIcon);
+
+    await chrome.storage.sync.set({ theme: newTheme });
+  });
+
+  // Получаем элементы
+  const typingInput = document.getElementById('typing-input');
+  const historyToggle = document.getElementById('history-toggle');
+  const historyPanel = overlay.querySelector('.translation-history');
+
+  // Обработчик кнопки истории
+  historyToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = historyPanel.style.display !== 'none';
+    historyPanel.style.display = isVisible ? 'none' : 'flex';
+    historyToggle.classList.toggle('active', !isVisible);
+  });
+
+  // Обработчик клика по элементам истории
+  setTimeout(() => {
+    const historyItems = document.querySelectorAll('.history-item');
+    historyItems.forEach((item) => {
+      item.addEventListener('click', function () {
+        const index = parseInt(this.dataset.index);
+        const input = document.getElementById('typing-input');
+        if (input && window._translationHistory && window._translationHistory[index]) {
+          input.value = window._translationHistory[index].original;
+          input.focus();
+          input.dispatchEvent(new Event('input'));
+        }
+      });
+    });
+  }, 100);
+
+  // Автоматическое изменение высоты textarea
+  const minHeight = 36;
+  const maxHeight = 150;
+
+  function autoResize() {
+    typingInput.style.height = minHeight + 'px';
+    typingInput.style.overflowY = 'hidden';
+
+    const scrollHeight = typingInput.scrollHeight;
+
+    if (scrollHeight > 54) {
+      const newHeight = Math.min(scrollHeight, maxHeight);
+      typingInput.style.height = newHeight + 'px';
+
+      if (scrollHeight >= maxHeight) {
+        typingInput.style.overflowY = 'auto';
+      }
+    }
+  }
+
+  typingInput.addEventListener('input', autoResize);
+
   // Фокус на input
   setTimeout(() => {
-    document.getElementById('typing-input').focus();
+    typingInput.focus();
   }, 100);
-  
-  // Закрытие по Escape или клику вне
+
+  // Закрытие по клику вне контейнера
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) {
       overlay.remove();
     }
   });
-  
+
+  // Закрытие по Escape
   document.addEventListener('keydown', function escHandler(e) {
     if (e.key === 'Escape') {
       overlay.remove();
       document.removeEventListener('keydown', escHandler);
     }
   });
-  
-  // Enter для отправки через Reply
-  document.getElementById('typing-input').addEventListener('keydown', async (e) => {
-    if (e.key === 'Enter') {
+
+  // Enter для показа preview (с Reply)
+  typingInput.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      const text = e.target.value.trim();
+      const text = typingInput.value.trim();
       if (text) {
-        // Сразу скрываем оверлей
-        overlay.style.animation = 'fadeOut 0.2s ease-out';
-        setTimeout(() => {
-          overlay?.remove();
-        }, 200);
-        
+        await showTranslationPreviewWithReply(text, overlay);
+      }
+    }
+  });
+}
+
+// Показываем preview перевода с отправкой через Reply
+async function showTranslationPreviewWithReply(originalText, mainOverlay) {
+  try {
+    const settings = await chrome.storage.sync.get({
+      typingModel: 'google/gemini-2.5-flash',
+      typingSpeed: 60
+    });
+
+    const previewContainer = mainOverlay.querySelector('.typing-emulator-container');
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'translation-preview loading';
+    loadingDiv.innerHTML = `
+      <div class="preview-loading">Translating...</div>
+      <div class="preview-model">Model: ${escapeHtml(settings.typingModel)}</div>
+    `;
+    previewContainer.appendChild(loadingDiv);
+
+    const translatedText = await translateRuToEn(originalText);
+
+    loadingDiv.className = 'translation-preview';
+    loadingDiv.innerHTML = `
+      <div class="preview-header-row">
+        <span class="preview-label">Preview (Reply mode)</span>
+        <div class="preview-header-right">
+          <span class="preview-model">${escapeHtml(settings.typingModel)}</span>
+          <button class="preview-close-btn" title="Close preview">×</button>
+        </div>
+      </div>
+      <div class="preview-text" id="preview-text-content">${escapeHtml(translatedText)}</div>
+      <div class="preview-actions">
+        <span class="preview-hint">Press <kbd>Y</kbd> to send via Reply, <kbd>T</kbd> to translate back, <kbd>R</kbd> to check grammar, or <kbd>N</kbd> / <kbd>Esc</kbd> to cancel</span>
+      </div>
+    `;
+
+    const closeBtn = loadingDiv.querySelector('.preview-close-btn');
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.removeEventListener('keydown', previewKeyHandler);
+      loadingDiv.remove();
+    });
+
+    const previewKeyHandler = async (e) => {
+      if (e.code === 'KeyY') {
+        e.preventDefault();
+        document.removeEventListener('keydown', previewKeyHandler);
+
+        // Закрываем оверлей
+        mainOverlay.remove();
+
         try {
-          // Нажимаем Reply
-          if (!clickReplyButton()) {
+          // Нажимаем Reply (с hover если нужно)
+          if (!(await clickReplyButtonWithHover())) {
             showErrorPopup('Reply button not found');
             return;
           }
-          
+
           // Ждем появления поля ввода
           await new Promise(resolve => setTimeout(resolve, 500));
-          
-          console.log('[Reply Emulator] Начинаем перевод:', text);
-          
-          // Переводим текст
-          const translatedText = await translateRuToEn(text);
-          console.log('[Reply Emulator] Переведено:', translatedText);
-          
+
           // Находим поле ввода Instagram
           const inputField = findInstagramInputField();
           if (!inputField) {
-            throw new Error('Instagram input field not found');
+            showErrorPopup('Instagram input field not found');
+            return;
           }
-          
-          // Получаем скорость из настроек
-          const settings = await chrome.storage.sync.get({ typingSpeed: 60 });
+
+          // Сохраняем в историю
+          const historyData = await chrome.storage.local.get({ translationHistory: [] });
+          let history = historyData.translationHistory;
+
+          const newEntry = {
+            original: originalText,
+            translated: translatedText,
+            timestamp: Date.now()
+          };
+
+          const existingIndex = history.findIndex(item => item.original === originalText);
+          if (existingIndex !== -1) {
+            history.splice(existingIndex, 1);
+          }
+
+          history.unshift(newEntry);
+
+          if (history.length > 10) {
+            history = history.slice(0, 10);
+          }
+
+          await chrome.storage.local.set({ translationHistory: history });
+
+          // Печатаем переведенный текст
           await emulateTyping(inputField, translatedText, settings.typingSpeed);
-          
+
           console.log('[Reply Emulator] Готово!');
-          
+
         } catch (error) {
           console.error('[Reply Emulator] Error:', error);
           showErrorPopup('Error: ' + error.message);
         }
+
+      } else if (e.code === 'KeyT') {
+        e.preventDefault();
+
+        if (loadingDiv.querySelector('.back-translation')) {
+          return;
+        }
+
+        const backTransDiv = document.createElement('div');
+        backTransDiv.className = 'back-translation';
+        backTransDiv.innerHTML = '<div class="preview-loading-inline">Translating back...</div>';
+
+        const actionsDiv = loadingDiv.querySelector('.preview-actions');
+        loadingDiv.insertBefore(backTransDiv, actionsDiv);
+
+        try {
+          const backTranslated = await fetchTranslation(translatedText);
+          backTransDiv.innerHTML = `
+            <div class="back-translation-label">Back translation (RU):</div>
+            <div class="back-translation-text">${escapeHtml(backTranslated)}</div>
+          `;
+        } catch (error) {
+          backTransDiv.innerHTML = '<div class="back-translation-error">Translation error</div>';
+          console.error('[Back translation] Ошибка:', error);
+        }
+
+      } else if (e.code === 'KeyR') {
+        e.preventDefault();
+
+        document.removeEventListener('keydown', previewKeyHandler);
+        loadingDiv.remove();
+
+        const inputField = mainOverlay.querySelector('#typing-input');
+        const text = inputField.value.trim();
+        if (text) {
+          await showGrammarCorrectionWithReply(text, mainOverlay, inputField);
+        }
+
+      } else if (e.code === 'KeyN' || e.key === 'Escape') {
+        e.preventDefault();
+        document.removeEventListener('keydown', previewKeyHandler);
+        loadingDiv.remove();
       }
+    };
+
+    document.addEventListener('keydown', previewKeyHandler);
+
+  } catch (error) {
+    console.error('[Preview] Ошибка:', error);
+    showErrorPopup('Translation error: ' + error.message);
+  }
+}
+
+// Показываем корректировку грамматики с Reply
+async function showGrammarCorrectionWithReply(originalText, mainOverlay, inputField) {
+  try {
+    const settings = await chrome.storage.sync.get({
+      typingModel: 'google/gemini-2.5-flash'
+    });
+
+    const previewContainer = mainOverlay.querySelector('.typing-emulator-container');
+    const correctionDiv = document.createElement('div');
+    correctionDiv.className = 'translation-preview loading';
+    correctionDiv.innerHTML = `
+      <div class="preview-loading">Checking grammar...</div>
+      <div class="preview-model">Model: ${escapeHtml(settings.typingModel)}</div>
+    `;
+    previewContainer.appendChild(correctionDiv);
+
+    const apiKey = CONFIG.API_KEY;
+    const url = CONFIG.API_URL;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Translator Extension'
+      },
+      body: JSON.stringify({
+        model: settings.typingModel,
+        messages: [
+          {
+            role: 'system',
+            content: PROMPTS.grammarCheck.initial
+          },
+          {
+            role: 'user',
+            content: originalText
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 500
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
-  });
+
+    const data = await response.json();
+    const correctedText = data.choices?.[0]?.message?.content?.trim() || originalText;
+
+    const updateCorrectionUI = (text) => {
+      correctionDiv.className = 'translation-preview';
+      correctionDiv.innerHTML = `
+        <div class="preview-header-row">
+          <span class="preview-label">Grammar Check (Reply mode)</span>
+          <div class="preview-header-right">
+            <span class="preview-model">${escapeHtml(settings.typingModel)}</span>
+            <button class="preview-close-btn-correction" title="Close">×</button>
+          </div>
+        </div>
+        <div class="correction-comparison">
+          <div class="correction-corrected">
+            <div class="correction-label">Corrected:</div>
+            <div class="correction-text">${escapeHtml(text)}</div>
+          </div>
+        </div>
+        <div class="preview-actions">
+          <button class="regenerate-btn" title="Regenerate (Q)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            Regenerate
+          </button>
+          <span class="preview-hint">Press <kbd>Y</kbd> to apply, <kbd>Q</kbd> to regenerate, or <kbd>N</kbd> / <kbd>Esc</kbd> to cancel</span>
+        </div>
+      `;
+
+      const closeBtn = correctionDiv.querySelector('.preview-close-btn-correction');
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.removeEventListener('keydown', correctionKeyHandler);
+        correctionDiv.remove();
+      });
+
+      const regenerateBtn = correctionDiv.querySelector('.regenerate-btn');
+      regenerateBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await regenerateCorrection();
+      });
+    };
+
+    const regenerateCorrection = async () => {
+      try {
+        correctionDiv.className = 'translation-preview loading';
+        correctionDiv.innerHTML = `
+          <div class="preview-loading">Regenerating...</div>
+          <div class="preview-model">Model: ${escapeHtml(settings.typingModel)}</div>
+        `;
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+            'HTTP-Referer': window.location.origin,
+            'X-Title': 'Translator Extension'
+          },
+          body: JSON.stringify({
+            model: settings.typingModel,
+            messages: [
+              {
+                role: 'system',
+                content: PROMPTS.grammarCheck.regenerate
+              },
+              {
+                role: 'user',
+                content: originalText
+              }
+            ],
+            temperature: 0.8,
+            max_tokens: 500
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const newCorrectedText = data.choices?.[0]?.message?.content?.trim() || originalText;
+
+        updateCorrectionUI(newCorrectedText);
+
+      } catch (error) {
+        console.error('[Grammar Check] Ошибка регенерации:', error);
+        showErrorPopup('Regeneration error: ' + error.message);
+      }
+    };
+
+    updateCorrectionUI(correctedText);
+
+    const correctionKeyHandler = (e) => {
+      if (e.code === 'KeyY') {
+        e.preventDefault();
+        document.removeEventListener('keydown', correctionKeyHandler);
+
+        const currentText = correctionDiv.querySelector('.correction-text')?.textContent || correctedText;
+
+        inputField.value = currentText;
+        inputField.focus();
+
+        correctionDiv.remove();
+      } else if (e.code === 'KeyQ') {
+        e.preventDefault();
+        regenerateCorrection();
+      } else if (e.code === 'KeyN' || e.key === 'Escape') {
+        e.preventDefault();
+        document.removeEventListener('keydown', correctionKeyHandler);
+        correctionDiv.remove();
+      }
+    };
+
+    document.addEventListener('keydown', correctionKeyHandler);
+
+  } catch (error) {
+    console.error('[Grammar Check] Ошибка:', error);
+    showErrorPopup('Grammar check error: ' + error.message);
+  }
 }
 
 // Находим кнопку отправки

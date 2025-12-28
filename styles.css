@@ -1,5 +1,8 @@
 /* Встроенный перевод под сообщением */
 .inline-translation {
+  display: block;
+  width: 100%;
+  clear: both;
   margin-top: 4px;
   padding: 10px 14px;
   background: rgba(30, 60, 100, 0.85);
@@ -8,6 +11,7 @@
   font-size: 13px;
   animation: slideDown 0.2s ease-out;
   backdrop-filter: blur(10px);
+  box-sizing: border-box;
 }
 
 /* Исходящие сообщения - красный оверлей */
@@ -40,6 +44,18 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+.translation-lang {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
 }
 
 /* Для исходящих сообщений меняем порядок */
@@ -279,9 +295,9 @@
 .theme-icon-btn {
   width: 18px;
   height: 18px;
-  opacity: 0.6;
+  opacity: 0.8;
   transition: all 0.3s ease;
-  filter: brightness(0) invert(1);
+  filter: brightness(0) saturate(100%) invert(79%) sepia(47%) saturate(500%) hue-rotate(115deg) brightness(101%) contrast(101%);
 }
 
 .theme-toggle-btn:hover .theme-icon-btn {
@@ -831,32 +847,43 @@
 
 /* Тёмная тема консоли (по умолчанию) */
 #typing-input {
+  display: block;
   width: 100%;
-  height: 36px;
   min-height: 36px;
   max-height: 150px;
-  padding: 0 75px 0 16px;
+  margin: 0;
+  padding: 8px 150px 8px 16px;
   background: rgba(40, 40, 40, 0.8);
   border: 1px solid rgba(100, 255, 218, 0.3);
   border-radius: 12px;
   color: #e8e8e8;
-  font-size: 18px;
+  font-size: 16px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
   box-shadow: none;
   animation: slideUp 0.2s ease-out;
   resize: none;
-  overflow-y: hidden;
   overflow-x: hidden;
+  overflow-y: auto;
   font-weight: 500;
-  line-height: 36px;
+  line-height: 20px;
   word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
   white-space: pre-wrap;
+  box-sizing: border-box;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+#typing-input::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
 }
 
 #typing-input::placeholder {
   color: rgba(136, 146, 176, 0.6);
   font-weight: 400;
+  line-height: 20px;
 }
 
 .typing-emulator-overlay[data-theme="light"] #typing-input::placeholder {
@@ -867,11 +894,6 @@
   outline: none;
   border-color: rgba(100, 255, 218, 0.6);
   background: rgba(50, 50, 50, 0.9);
-}
-
-#typing-input::placeholder {
-  color: rgba(136, 146, 176, 0.6);
-  font-weight: 400;
 }
 
 /* Светлая тема консоли */
@@ -899,8 +921,8 @@
   
   #typing-input {
     font-size: 13px;
-    height: 36px;
-    padding: 8px 14px;
+    min-height: 36px;
+    padding: 8px 120px 8px 14px;
   }
 }
 
@@ -947,4 +969,185 @@
   background: rgba(255, 68, 68, 0.2);
   color: #ff4444;
   border: 1px solid #ff4444;
+}
+
+
+/* ============================================
+   HELP OVERLAY
+   ============================================ */
+
+.help-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+  backdrop-filter: blur(4px);
+}
+
+.help-container {
+  background: rgba(26, 26, 26, 0.95);
+  border: 1px solid rgba(100, 255, 218, 0.3);
+  border-radius: 12px;
+  padding: 28px 32px;
+  min-width: 580px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease-out;
+}
+
+.help-overlay[data-theme="light"] .help-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 137, 123, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.help-container h2 {
+  margin: 0 0 24px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #64ffda;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.help-overlay[data-theme="light"] .help-container h2 {
+  color: #00897b;
+}
+
+.help-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.help-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: rgba(30, 30, 30, 0.6);
+  border: 1px solid rgba(100, 255, 218, 0.15);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.help-item:hover {
+  background: rgba(40, 40, 40, 0.8);
+  border-color: rgba(100, 255, 218, 0.3);
+}
+
+.help-item-full {
+  grid-column: 1 / 2;
+}
+
+.help-overlay[data-theme="light"] .help-item {
+  background: rgba(245, 245, 245, 0.8);
+  border-color: rgba(0, 137, 123, 0.15);
+}
+
+.help-overlay[data-theme="light"] .help-item:hover {
+  background: rgba(240, 240, 240, 0.95);
+  border-color: rgba(0, 137, 123, 0.3);
+}
+
+.help-item kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid rgba(100, 255, 218, 0.4);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64ffda;
+  font-family: 'Courier New', monospace;
+  min-width: 80px;
+  white-space: nowrap;
+}
+
+.help-overlay[data-theme="light"] .help-item kbd {
+  border-color: rgba(0, 137, 123, 0.4);
+  color: #00897b;
+}
+
+.help-item span {
+  color: #e8e8e8;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.help-overlay[data-theme="light"] .help-item span {
+  color: #2d2d2d;
+}
+
+
+/* ============================================
+   TARGET LANGUAGE SELECTOR IN TYPING EMULATOR
+   ============================================ */
+
+.target-lang-select {
+  position: absolute;
+  top: 4px;
+  right: 72px;
+  height: 28px;
+  padding: 4px 24px 4px 10px;
+  background: rgba(100, 255, 218, 0.15);
+  border: 1px solid rgba(100, 255, 218, 0.4);
+  border-radius: 6px;
+  color: #64ffda;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  z-index: 10;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364ffda' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.target-lang-select:hover {
+  border-color: rgba(100, 255, 218, 0.7);
+  background-color: rgba(100, 255, 218, 0.25);
+}
+
+.target-lang-select:focus {
+  border-color: #64ffda;
+  box-shadow: 0 0 0 2px rgba(100, 255, 218, 0.15);
+}
+
+.target-lang-select option {
+  background: #1e1e1e;
+  color: #e8e8e8;
+  padding: 8px;
+}
+
+.typing-emulator-overlay[data-theme="light"] .target-lang-select {
+  background: rgba(245, 245, 245, 0.95);
+  border-color: rgba(0, 137, 123, 0.3);
+  color: #00897b;
+}
+
+.typing-emulator-overlay[data-theme="light"] .target-lang-select:hover {
+  border-color: rgba(0, 137, 123, 0.6);
+  background: rgba(255, 255, 255, 1);
+}
+
+.typing-emulator-overlay[data-theme="light"] .target-lang-select:focus {
+  border-color: #00897b;
+  box-shadow: 0 0 0 2px rgba(0, 137, 123, 0.15);
+}
+
+.typing-emulator-overlay[data-theme="light"] .target-lang-select option {
+  background: #ffffff;
+  color: #2d2d2d;
 }
